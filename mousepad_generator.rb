@@ -10,6 +10,11 @@ DEFAULT_OUTPUT_FILENAME = 'mousepad.png'
 DEFAULT_WIDTH_IN_PIXELS = 800
 DEFAULT_HEIGHT_IN_PIXELS = 600
 DEFAULT_LINE_THICKNESS = 5
+# https://www.retrotechnology.com/herbs_stuff/sgi.html
+# "..is either 85 squares per inch, or 60 squares per inch - the two in the photo. I have a few at
+# about 25 squares per inch. I call these fine (85), medium (60), and coarse (25)"
+#
+# our grid pitch is in pixels, on the CENTRE of the lines: ignores `line_thickness`
 DEFAULT_GRID_PITCH = 25
 
 options = {
@@ -32,67 +37,93 @@ def default_line(options, opt)
   "(default: #{options[opt].inspect})"
 end
 
-OptionParser.new do |opts|
-  opts.banner = "
-Mousepad pattern generate for Mouse System mice
-Version #{VERSION} - https://github.com/xunker/mouse_system_mousepad_generator
+opts = OptionParser.new do |opts|
+  opts.banner = <<-BANNER
+    Mousepad pattern generate for Mouse System mice
+    Version #{VERSION} - https://github.com/xunker/mouse_system_mousepad_generator
 
-Unless otherwise specified, all dimensional measurements are in PIXELS.
+    Unless otherwise specified, all dimensional measurements are in PIXELS.
 
-Usage: #{__FILE__} [options]"
+    Usage: #{__FILE__} [options]
+  BANNER
+end
 
-  opts.on("-v", "--[no-]verbose", "Run verbosely #{default_line(options, :verbose)}") do |v|
-    options[:verbose] = !!v
+option_switches = [
+  [
+    ["-v", "--[no-]verbose"],
+    "Run verbosely",
+    :verbose,
+    -> (options, v) { options[:verbose] = !!v }
+  ],
+  [
+    ["-b", "--[no-]border"],
+    "Add border to image output",
+    :include_border,
+    -> (options, v) { options[:include_border] = !!v }
+  ],
+  [
+    ["-o FILENAME", "--output=FILENAME"],
+    "Filename (or filename mask) to write",
+    :filename,
+    -> (options, fn) { options[:filename] = fn }
+  ],
+  [
+    ["-H RGBA", "--horizontal-color=RGBA"],
+    "Color of horizontal lines in 'rrggbbaa` hex",
+    :horizontal_rgba,
+    -> (options, hex) { options[:horizontal_rgba] = hex }
+  ],
+  [
+    ["-V RGBA", "--vertical-color=RGBA"],
+    "Color of vertical lines in 'rrggbbaa` hex",
+    :vertical_rgba,
+    -> (options, hex) { options[:vertical_rgba] = hex }
+  ],
+  [
+    ["-I RGBA", "--intersection-color=RGBA"],
+    "Color where lines intersect in 'rrggbbaa` hex",
+    :intersection_rgba,
+    -> (options, hex) { options[:intersection_rgba] = hex }
+  ],
+  [
+    ["-B RGBA", "--border-color=RGBA"],
+    "Color of border in 'rrggbbaa` hex",
+    :border_rgba,
+    -> (options, hex) { options[:border_rgba] = hex }
+  ],
+  [
+    ["-w WIDTH", "--width=WIDTH"],
+    "Width in pixels",
+    :width,
+    -> (options, w) { options[:width] = w.to_i }
+  ],
+  [
+    ["-h HEIGHT", "--height=HEIGHT"],
+    "Height in pixels",
+    :height,
+    -> (options, h) { options[:height] = h.to_i }
+  ],
+  [
+    ["-l PIXELS", "--line-thickness=PIXELS"],
+    "Line thickness in pixels",
+    :line_thickness,
+    -> (options, h) { options[:line_thickness] = h.to_i }
+  ],
+  [
+    ["-p PIXELS", "--pitch=PIXELS"],
+    "Pitch of the grid lines in pixels",
+    :grid_pitch,
+    -> (options, h) { options[:grid_pitch] = h.to_i }
+  ],
+]
+
+option_switches.each do |switches, desc, key, blk|
+  opts.on(*switches, "#{desc}") do |o|
+    blk.call(options, o)
   end
+end
 
-  opts.on("-b", "--[no-]border", "Add border to image output #{default_line(options, :include_border)}") do |b|
-    options[:include_border] = !!b
-  end
-
-  opts.on("-s", "--separate-files", "Generate separate files for horizontal and vertical lines #{default_line(options, :separate_files)}") do |s|
-    options[:separate_files] = !!s
-  end
-
-  opts.on("-i", "--[no-]intersections", "Draw line intersections with different color #{default_line(options, :color_intersections)}") do |v|
-    options[:color_intersections] = !!v
-  end
-
-  opts.on("-w WIDTH", "--width=WIDTH", "Width in pixels #{default_line(options, :width)}") do |w|
-    options[:width] = w.to_i
-  end
-
-  opts.on("-h HEIGHT", "--height=HEIGHT", "Height in pixels #{default_line(options, :height)}") do |h|
-    options[:height] = h.to_i
-  end
-
-  opts.on("-l PIXELS", "--line-thickness=PIXELS", "Line thickness in pixels #{default_line(options, :line_thickness)}") do |h|
-    options[:line_thickness] = h.to_i
-  end
-
-  opts.on("-p PIXELS", "--pitch=PIXELS", "Pitch of the grid lines in pixels #{default_line(options, :grid_pitch)}") do |h|
-    options[:grid_pitch] = h.to_i
-  end
-
-  opts.on("-H RGBA", "--horizontal-color=RGBA", "Color of horizontal lines in 'rrggbbaa` hex #{default_line(options, :horizontal_rgba)}") do |h|
-    options[:horizontal_rgba] = h
-  end
-
-  opts.on("-V RGBA", "--vertical-color=RGBA", "Color of vertical lines in 'rrggbbaa` hex #{default_line(options, :vertical_rgba)}") do |v|
-    options[:vertical_rgba] = v
-  end
-
-  opts.on("-I RGBA", "--intersection-color=RGBA", "Color where lines intersect in 'rrggbbaa` hex #{default_line(options, :intersection_rgba)}") do |v|
-    options[:intersection_rgba] = v
-  end
-
-  opts.on("-B RGBA", "--border-color=RGBA", "Color of border in 'rrggbbaa` hex #{default_line(options, :border_rgba)}") do |v|
-    options[:border_rgba] = v
-  end
-
-  opts.on("-o FILENAME", "--output=FILENAME", "Filename (or filename mask) to write #{default_line(options, :filename)}") do |fn|
-    options[:filename] = fn.to_i
-  end
-end.parse!
+opts.parse!
 
 LOG_LEVELS = %i[fatal info debug]
 LOG_LEVEL_PRIORITY = LOG_LEVELS.each_with_index.map{|level, priority| [level, priority]}.to_h
@@ -127,17 +158,8 @@ if options[:grid_pitch] <= options[:line_thickness]
   error "grid-pitch (#{options[:grid_pitch]}) must be > line-thickness (#{options[:line_thickness]})"
 end
 
-# https://www.retrotechnology.com/herbs_stuff/sgi.html
-# "..is either 85 squares per inch, or 60 squares per inch - the two in the photo. I have a few at
-# about 25 squares per inch. I call these fine (85), medium (60), and coarse (25)"
-#
-# our grid pitch is in pixels, on the CENTRE of the lines: ignores `line_thickness`
-grid_pitch = 25
-
-line_thickness = 5
 
 BACKGROUND_COLOR = ChunkyPNG::Color::TRANSPARENT
-
 LATITUDE_COLOR = ChunkyPNG::Color.from_hex(options[:horizontal_rgba])
 LONGITUDE_COLOR = ChunkyPNG::Color.from_hex(options[:vertical_rgba])
 INTERSECTION_COLOR = ChunkyPNG::Color.from_hex(options[:intersection_rgba])
