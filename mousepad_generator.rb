@@ -7,15 +7,15 @@ require 'pry'
 VERSION = [2022, 01, 27, 00].join('.')
 
 DEFAULT_OUTPUT_FILENAME = 'mousepad.png'
-DEFAULT_WIDTH_IN_PIXELS = 800
-DEFAULT_HEIGHT_IN_PIXELS = 600
-DEFAULT_LINE_THICKNESS = 5
+DEFAULT_WIDTH_IN_PIXELS = 1024
+DEFAULT_HEIGHT_IN_PIXELS = 768
+DEFAULT_LINE_THICKNESS = 2
 # https://www.retrotechnology.com/herbs_stuff/sgi.html
 # "..is either 85 squares per inch, or 60 squares per inch - the two in the photo. I have a few at
 # about 25 squares per inch. I call these fine (85), medium (60), and coarse (25)"
 #
 # our grid pitch is in pixels, on the CENTRE of the lines: ignores `line_thickness`
-DEFAULT_GRID_PITCH = 25
+DEFAULT_GRID_PITCH =  10
 
 options = {
   width: DEFAULT_WIDTH_IN_PIXELS,
@@ -115,6 +115,12 @@ option_switches = [
     :grid_pitch,
     -> (options, h) { options[:grid_pitch] = h.to_i }
   ],
+  [
+    ["-s", "--[no-]separate-files"],
+    "Generate separate files for horizontal and vertical lines",
+    :separate_files,
+    -> (options, s) { options[:separate_files] = !!s }
+  ]
 ]
 
 option_switches.each do |switches, desc, key, blk|
