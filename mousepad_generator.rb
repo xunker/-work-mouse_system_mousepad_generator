@@ -2,7 +2,6 @@
 
 require 'chunky_png'
 require 'optparse'
-require 'pry'
 
 VERSION = [2022, 01, 27, 00].join('.')
 
@@ -69,25 +68,25 @@ option_switches = [
   ],
   [
     ["-H RGBA", "--horizontal-color=RGBA"],
-    "Color of horizontal lines in 'rrggbbaa` hex",
+    "Color of horizontal lines in 'rrggbbaa' hex",
     :horizontal_rgba,
     -> (options, hex) { options[:horizontal_rgba] = hex }
   ],
   [
     ["-V RGBA", "--vertical-color=RGBA"],
-    "Color of vertical lines in 'rrggbbaa` hex",
+    "Color of vertical lines in 'rrggbbaa' hex",
     :vertical_rgba,
     -> (options, hex) { options[:vertical_rgba] = hex }
   ],
   [
     ["-I RGBA", "--intersection-color=RGBA"],
-    "Color where lines intersect in 'rrggbbaa` hex",
+    "Color where lines intersect in 'rrggbbaa' hex",
     :intersection_rgba,
     -> (options, hex) { options[:intersection_rgba] = hex }
   ],
   [
     ["-B RGBA", "--border-color=RGBA"],
-    "Color of border in 'rrggbbaa` hex",
+    "Color of border in 'rrggbbaa' hex",
     :border_rgba,
     -> (options, hex) { options[:border_rgba] = hex }
   ],
@@ -124,6 +123,9 @@ option_switches = [
 ]
 
 option_switches.each do |switches, desc, key, blk|
+  if options[key].to_s.length > 0
+    desc += " (default: #{options[key].inspect})"
+  end
   opts.on(*switches, "#{desc}") do |o|
     blk.call(options, o)
   end
